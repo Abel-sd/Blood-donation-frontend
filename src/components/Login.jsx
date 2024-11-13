@@ -1,49 +1,61 @@
 // src/components/Login.jsx
-import React, { useState, useEffect } from 'react';
-import { auth, googleProvider, facebookProvider } from '../firebaseConfig';
-import { signInWithPopup } from 'firebase/auth';
-import { useNavigate, useLocation } from 'react-router-dom';
+import React, { useState, useEffect } from "react";
 
+import { useNavigate, useLocation } from "react-router-dom";
+import useSignIn from "react-auth-kit/hooks/useSignIn";
+import { useMutation } from "@tanstack/react-query";
+import axios from "axios";
 const Login = () => {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const signIn = useSignIn();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
+  const mutation = useMutation({
+    mutationFn: (data) => {
+      return axios.post("http://localhost:5000/login", data);
+    },
+    mutationKey: "login",
+    onSuccess: (data) => {
+      if (
+        signIn({
+          auth: {
+            token: data.data,
+            type: "Bearer",
+          },
+          userState: {
+            name: "React User",
+            uid: 123456,
+          },
+        })
+      ) {
+        navigate("/");
+      } else {
+      }
+    },
+  });
+
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log('Logging in with:', { username, password });
-    setIsAuthenticated(true);
-  };
 
-  const handleGoogleLogin = async () => {
-    try {
-      await signInWithPopup(auth, googleProvider);
-      setIsAuthenticated(true);
-    } catch (error) {
-      console.error('Google login error:', error);
-    }
-  };
-
-  const handleFacebookLogin = async () => {
-    try {
-      await signInWithPopup(auth, facebookProvider);
-      setIsAuthenticated(true);
-    } catch (error) {
-      console.error('Facebook login error:', error);
-    }
+    mutation.mutate({ username, password });
   };
 
   useEffect(() => {
     if (isAuthenticated) {
-      const redirectPath = location.state?.from?.pathname || '/';
+      const redirectPath = location.state?.from?.pathname || "/";
       navigate(redirectPath);
     }
   }, [isAuthenticated, navigate, location]);
 
   return (
     <div style={styles.container}>
+      {mutation.isError && <div>Error: {mutation.error.message}</div>}
+      {mutation.isLoading && (
+        <div className="absolute top-0 left-0">Loading</div>
+      )}
       <form onSubmit={handleSubmit} style={styles.form}>
         <h2 style={styles.heading}>Login</h2>
         <input
@@ -62,86 +74,83 @@ const Login = () => {
           required
           style={styles.input}
         />
-        <button type="submit" style={styles.button}>Login</button>
+        <button type="submit" style={styles.button}>
+          Login
+        </button>
       </form>
-
-      <div style={styles.socialContainer}>
-        <button onClick={handleGoogleLogin} style={styles.googleButton}>Login with Google</button>
-        <button onClick={handleFacebookLogin} style={styles.facebookButton}>Login with Facebook</button>
-      </div>
     </div>
   );
 };
 
 const styles = {
   container: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: '100vh',
-    backgroundColor: '#f0f2f5',
-    padding: '20px',
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    minHeight: "100vh",
+    backgroundColor: "#f0f2f5",
+    padding: "20px",
   },
   form: {
-    display: 'flex',
-    flexDirection: 'column',
-    width: '100%',
-    maxWidth: '400px',
-    backgroundColor: '#fff',
-    padding: '20px',
-    borderRadius: '8px',
-    boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)',
+    display: "flex",
+    flexDirection: "column",
+    width: "100%",
+    maxWidth: "400px",
+    backgroundColor: "#fff",
+    padding: "20px",
+    borderRadius: "8px",
+    boxShadow: "0px 4px 12px rgba(0, 0, 0, 0.1)",
   },
   heading: {
-    textAlign: 'center',
-    color: '#333',
-    marginBottom: '1rem',
+    textAlign: "center",
+    color: "#333",
+    marginBottom: "1rem",
   },
   input: {
-    marginBottom: '1rem',
-    padding: '12px',
-    fontSize: '16px',
-    borderRadius: '4px',
-    border: '1px solid #ddd',
+    marginBottom: "1rem",
+    padding: "12px",
+    fontSize: "16px",
+    borderRadius: "4px",
+    border: "1px solid #ddd",
   },
   button: {
-    padding: '12px',
-    fontSize: '16px',
-    backgroundColor: '#007bff',
-    color: '#fff',
-    border: 'none',
-    borderRadius: '4px',
-    cursor: 'pointer',
+    padding: "12px",
+    fontSize: "16px",
+    backgroundColor: "#007bff",
+    color: "#fff",
+    border: "none",
+    borderRadius: "4px",
+    cursor: "pointer",
   },
   socialContainer: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    marginTop: '20px',
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    marginTop: "20px",
   },
   googleButton: {
-    padding: '12px',
-    fontSize: '16px',
-    backgroundColor: '#db4437',
-    color: '#fff',
-    border: 'none',
-    borderRadius: '4px',
-    cursor: 'pointer',
-    marginBottom: '10px',
-    width: '100%',
-    maxWidth: '400px',
+    padding: "12px",
+    fontSize: "16px",
+    backgroundColor: "#db4437",
+    color: "#fff",
+    border: "none",
+    borderRadius: "4px",
+    cursor: "pointer",
+    marginBottom: "10px",
+    width: "100%",
+    maxWidth: "400px",
   },
   facebookButton: {
-    padding: '12px',
-    fontSize: '16px',
-    backgroundColor: '#3b5998',
-    color: '#fff',
-    border: 'none',
-    borderRadius: '4px',
-    cursor: 'pointer',
-    width: '100%',
-    maxWidth: '400px',
+    padding: "12px",
+    fontSize: "16px",
+    backgroundColor: "#3b5998",
+    color: "#fff",
+    border: "none",
+    borderRadius: "4px",
+    cursor: "pointer",
+    width: "100%",
+    maxWidth: "400px",
   },
 };
 
