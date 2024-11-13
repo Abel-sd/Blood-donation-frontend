@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import useSignIn from "react-auth-kit/hooks/useSignIn";
 import { useMutation } from "@tanstack/react-query";
 import axios from "axios";
@@ -8,10 +8,9 @@ const Login = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [popupMessage, setPopupMessage] = useState("");
-  const [popupType, setPopupType] = useState(""); // "success" or "error"
+  const [popupType, setPopupType] = useState("");
   const signIn = useSignIn();
   const navigate = useNavigate();
-  const location = useLocation();
 
   const mutation = useMutation({
     mutationFn: (data) => {

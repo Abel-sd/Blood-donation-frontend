@@ -7,10 +7,9 @@ import { useMutation } from "@tanstack/react-query";
 
 // Define validation schema with Yup
 const schema = yup.object().shape({
-  username: yup
-    .string()
-    .required("Username is required")
-    .min(3, "Username must be at least 3 characters"),
+  firstName: yup.string().required("First name is required"),
+  lastName: yup.string().required("Last name is required"),
+
   email: yup
     .string()
     .email("Invalid email format")
@@ -35,7 +34,7 @@ const Register = () => {
 
   const mutation = useMutation({
     mutationFn: (data) => {
-      return axios.post("http://localhost", { data });
+      return axios.post("http://localhost:5001/api/auth/register", { data });
     },
     onSuccess: () => {
       setPopupMessage("Registration successful!");
@@ -77,11 +76,18 @@ const Register = () => {
         <h2 style={styles.heading}>Register</h2>
 
         <input
-          {...register("username")}
-          placeholder="Username"
+          {...register("firstName")}
+          placeholder="First Name"
           style={styles.input}
         />
-        <p style={styles.errorText}>{errors.username?.message}</p>
+        <p style={styles.errorText}>{errors.firstName?.message}</p>
+
+        <input
+          {...register("lastName")}
+          placeholder="Last Name"
+          style={styles.input}
+        />
+        <p style={styles.errorText}>{errors.lastName?.message}</p>
 
         <input
           {...register("email")}
@@ -155,7 +161,7 @@ const styles = {
   },
   popup: {
     position: "absolute",
-    top: "20px",
+    top: "220px",
     right: "20px",
     padding: "10px",
     borderRadius: "5px",
