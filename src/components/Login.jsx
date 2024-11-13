@@ -1,15 +1,15 @@
-// src/components/Login.jsx
 import React, { useState, useEffect } from "react";
-
 import { useNavigate, useLocation } from "react-router-dom";
 import useSignIn from "react-auth-kit/hooks/useSignIn";
 import { useMutation } from "@tanstack/react-query";
 import axios from "axios";
+
 const Login = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [popupMessage, setPopupMessage] = useState("");
+  const [popupType, setPopupType] = useState(""); // "success" or "error"
   const signIn = useSignIn();
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -22,37 +22,62 @@ const Login = () => {
       if (
         signIn({
           auth: {
-            token: data.data,
+            token: data.data.token, // Adjust according to your response structure
             type: "Bearer",
           },
           userState: {
-            name: "React User",
-            uid: 123456,
+            name: data.data.name || "React User", // Adjust as needed
+            uid: data.data.id || 123456, // Adjust as needed
           },
         })
       ) {
-        navigate("/");
-      } else {
+        setPopupMessage("Login successful!");
+        setPopupType("success");
+        setTimeout(() => navigate("/"), 2000); // Redirect after 2 seconds
       }
+    },
+    onError: (error) => {
+      setPopupMessage(
+        error.response?.data?.message || "Login failed. Please try again."
+      );
+      setPopupType("error");
     },
   });
 
   const handleSubmit = (e) => {
     e.preventDefault();
-
     mutation.mutate({ username, password });
   };
 
   useEffect(() => {
-    if (isAuthenticated) {
-      const redirectPath = location.state?.from?.pathname || "/";
-      navigate(redirectPath);
+    if (mutation.isError) {
+      setPopupMessage("An error occurred.");
+      setPopupType("error");
     }
-  }, [isAuthenticated, navigate, location]);
+  }, [mutation.isError]);
+
+  const closePopup = () => {
+    setPopupMessage("");
+    setPopupType("");
+  };
 
   return (
     <div style={styles.container}>
-      {mutation.isError && <div>Error: {mutation.error.message}</div>}
+      {popupMessage && (
+        <div
+          style={{
+            ...styles.popup,
+            backgroundColor: popupType === "success" ? "#d4edda" : "#f8d7da",
+            color: popupType === "success" ? "#155724" : "#721c24",
+          }}
+        >
+          {popupMessage}
+          <button onClick={closePopup} style={styles.closeButton}>
+            &times;
+          </button>
+        </div>
+      )}
+
       {mutation.isLoading && (
         <div className="absolute top-0 left-0">Loading</div>
       )}
@@ -123,34 +148,24 @@ const styles = {
     borderRadius: "4px",
     cursor: "pointer",
   },
-  socialContainer: {
+  popup: {
+    position: "absolute",
+    top: "220px",
+    right: "20px",
+    padding: "10px",
+    borderRadius: "5px",
+    zIndex: 1000,
     display: "flex",
-    flexDirection: "column",
+    justifyContent: "space-between",
     alignItems: "center",
-    marginTop: "20px",
+    boxShadow: "0px 4px 12px rgba(0, 0, 0, 0.2)",
   },
-  googleButton: {
-    padding: "12px",
-    fontSize: "16px",
-    backgroundColor: "#db4437",
-    color: "#fff",
+  closeButton: {
+    background: "none",
     border: "none",
-    borderRadius: "4px",
     cursor: "pointer",
-    marginBottom: "10px",
-    width: "100%",
-    maxWidth: "400px",
-  },
-  facebookButton: {
-    padding: "12px",
-    fontSize: "16px",
-    backgroundColor: "#3b5998",
-    color: "#fff",
-    border: "none",
-    borderRadius: "4px",
-    cursor: "pointer",
-    width: "100%",
-    maxWidth: "400px",
+    fontSize: "20px",
+    marginLeft: "10px",
   },
 };
 
@@ -163,7 +178,7 @@ const mediaQueries = `
   ${styles.form} {
     padding: 15px;
   }
-  ${styles.button}, ${styles.googleButton}, ${styles.facebookButton} {
+  ${styles.button} {
     font-size: 14px;
     padding: 10px;
   }
